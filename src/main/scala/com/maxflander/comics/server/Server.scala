@@ -19,16 +19,7 @@ object Server {
       }else{
         BadRequest()
       }
-
-    case req @ POST -> Root / "form-encoded" =>
-      // EntityDecoders return a Task[A] which is easy to sequence
-      req.decode[UrlForm] { m =>
-        val s = m.values
-        println(s)
-        println(s.keys)
-        Ok(s"Form Encoded Data\n$s")
-      }
-      }
+    }
 
   def main(args: Array[String]): Unit = {
     val main = println("here we go")
