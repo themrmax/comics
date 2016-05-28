@@ -1,0 +1,7 @@
+* make tests use a test-db and cleanup after each test
+* refactor database calls into separate function
+* make the database query just return unique comics
+* replace "getOrElse" with flatMap
+* replace .run.run with flatMap??
+* fix notification search to include blank searches (all)
+
