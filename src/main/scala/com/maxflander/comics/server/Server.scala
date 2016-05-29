@@ -69,6 +69,11 @@ object Server {
             "date" -> None,
             "superhero"-> None
           ))
+        val watchers = getWatchers(database, c)
+        val notifications = watchers.map(e => Document("email"-> e, "comic" -> comicBson))
+        val o2 = notificationsColl.insertMany(notifications)
+        val r2 = Await.result(o2.toFuture(), Duration(10, TimeUnit.SECONDS))
+        val count = notificationsColl.count()
         Ok(s"OK, added the comic")
       } else {
         BadRequest()
@@ -98,11 +103,13 @@ object Server {
     case request @ POST -> Root / "notifications" =>
       val mongoClient: MongoClient = MongoClient()
       val database: MongoDatabase = mongoClient.getDatabase("comics");
-      val collection: MongoCollection[Document] = database.getCollection("subscriptions");
+      val coll: MongoCollection[Document] = database.getCollection("notifications");
       val subscriber = jsonOf[Subscriber].decode(request, strict = true).run.run
       if (subscriber.isRight) {
         val s = subscriber | Subscriber("invalid")
-        Ok(s"yep ok")
+        val o = coll.find(equal("email", s.email))
+        val r = Await.result(o.toFuture(), Duration(10, TimeUnit.SECONDS))
+        Ok(Document( "comics" -> r).toString)
       } else {
         BadRequest()
       }
@@ -114,4 +121,3 @@ object Server {
     val server = builder.run.awaitShutdown()
   }
 }
-

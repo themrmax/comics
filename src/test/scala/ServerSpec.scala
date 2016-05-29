@@ -27,6 +27,16 @@ class ServerSpec extends FlatSpec with Matchers {
     val request = Request(method = POST, uri = uri("/subscribe")).withBody(Json.obj("author" -> Json.fromString("steve"))).run
     service(request).run.status.code shouldEqual 400
   }
+  "The notifications route" should "require an email" in {
+    val request = Request(method = POST, uri = uri("/notifications")).withBody(Json.obj("email" -> Json.fromString("comicfan69@rocketmail.com"))).run
+    service(request).run.status.code shouldEqual 200
+    val badRequest = Request(method = POST, uri = uri("/notifications"))
+    service(badRequest).run.status.code shouldEqual 400
+  }
+  it should "return some notifications" in {
+    val request = Request(method = POST, uri = uri("/notifications")).withBody(Json.obj("email" -> Json.fromString("comicfan69@rocketmail.com"))).run
+    val resp = service(request).run.as[String].run
+  }
   "getWatchers" should "get some watchers" in {
     val mongoClient = MongoClient()
     val database = mongoClient.getDatabase("comics");
