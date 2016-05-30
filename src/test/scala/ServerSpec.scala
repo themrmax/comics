@@ -37,10 +37,10 @@ class ServerSpec extends FlatSpec with Matchers {
     val request = Request(method = POST, uri = uri("/notifications")).withBody(Json.obj("email" -> Json.fromString("comicfan69@rocketmail.com"))).run
     val resp = service(request).run.as[String].run
   }
-  "getWatchers" should "get some watchers" in {
-    val mongoClient = MongoClient()
-    val database = mongoClient.getDatabase("comics");
-    val w = getWatchers(database, Comic("steve","hatman","1985"))
+  "A comic" should "get some watchers" in {
+    val db = MongoClient().getDatabase("comics");
+    val comic = Comic("steve","hatman","1985")
+    val w = comic.getWatchers(db)
     w.length should not equal 0
   }
 }
