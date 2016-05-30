@@ -2,14 +2,12 @@
 
 
 
+
 CLOSED: [2016-05-29 Sun 11:24]
+* TODO add exception handling for db (try catch {case e: Exceptionnn => ... })
 * TODO clean up json in notifications response
-* TODO change db calls to use helper functions
 * TODO add remove-comic endpoint 
 * TODO add comic titles
 * TODO make integration tests use a test-db and cleanup after each test
-* TODO refactor database calls into separate function
-* TODO replace "getOrElse" with flatMap
-* TODO replace .run.run with flatMap??
 * TODO fix notification search to include blank searches (all)
 
