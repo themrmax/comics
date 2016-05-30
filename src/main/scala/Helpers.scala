@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-package tour
-
 import java.util.concurrent.TimeUnit
 
 import scala.concurrent.Await

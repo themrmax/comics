@@ -4,6 +4,7 @@ import org.http4s.circe._
 import Server._
 import io.circe.Json
 import org.mongodb.scala._
+import Helpers._
 
 class ServerSpec extends FlatSpec with Matchers {
 

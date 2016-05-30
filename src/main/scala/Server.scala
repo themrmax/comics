@@ -9,6 +9,7 @@ import scala.concurrent.duration.Duration
 import org.mongodb.scala.model.Filters._
 import org.mongodb.scala.model.Projections._
 import org.mongodb.scala.bson.BsonValue
+import Helpers._
 
 case class Comic(
   author: String,
@@ -24,8 +25,7 @@ case class Comic(
         equal("superhero", superhero)
       )
 
-    val o2 = subscriptionsColl.find(query).projection(include("email"))
-    val r2 = Await.result(o2.toFuture(), Duration(10, TimeUnit.SECONDS))
+    val r2 = subscriptionsColl.find(query).projection(include("email")).results()
     val subscribersToNotify = r2.map(res => res.get("email").get).distinct
     return subscribersToNotify
   }

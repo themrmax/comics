@@ -1,10 +1,14 @@
 * DONE add notifcations endpoint
+
+
+
 CLOSED: [2016-05-29 Sun 11:24]
+* TODO clean up json in notifications response
+* TODO change db calls to use helper functions
 * TODO add remove-comic endpoint 
 * TODO add comic titles
 * TODO make integration tests use a test-db and cleanup after each test
 * TODO refactor database calls into separate function
-* TODO make the database query just return unique comics
 * TODO replace "getOrElse" with flatMap
 * TODO replace .run.run with flatMap??
 * TODO fix notification search to include blank searches (all)
