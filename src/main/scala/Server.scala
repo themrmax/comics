@@ -10,8 +10,11 @@ import org.mongodb.scala.model.Filters._
 import org.mongodb.scala.model.Projections._
 import org.mongodb.scala.bson.BsonValue
 import Helpers._
+import scala.concurrent._
+import ExecutionContext.Implicits.global
 
-case class Comic(
+
+final case class Comic(
   author: String,
   superhero: String,
   date: String) {
@@ -25,10 +28,27 @@ case class Comic(
         equal("superhero", superhero)
       )
 
+    // val query =or(
+    //   or(
+    //     equal("author", c.author),
+    //     equal("date", c.date),
+    //     equal("superhero", c.superhero)
+    //   ),
+    //   Document("author" -> None,
+    //     "date" -> None,
+    //     "superhero"-> None
+    //   ))
     val r2 = subscriptionsColl.find(query).projection(include("email")).results()
     val subscribersToNotify = r2.map(res => res.get("email").get).distinct
     return subscribersToNotify
   }
+}
+
+object Comic {
+  implicit val comicEntityDecoder: EntityDecoder[Comic] =
+    jsonOf[Comic]
+  implicit val comicEntityEncoder: EntityEncoder[Comic] =
+    jsonEncoderOf[Comic]
 }
 
 case class Subscription(
@@ -37,8 +57,18 @@ case class Subscription(
   superhero: Option[String],
   date: Option[String])
 
+object Subscription {
+  implicit val subscriptionEntityDecoder: EntityDecoder[Subscription] =
+    jsonOf[Subscription]
+}
+
 case class Subscriber(
   email: String)
+
+object Subscriber {
+  implicit val subscriberEntityDecoder: EntityDecoder[Subscriber] =
+    jsonOf[Subscriber]
+}
 
 object Server {
   def service = HttpService {
@@ -49,9 +79,7 @@ object Server {
       val mongoClient = MongoClient()
       val database = mongoClient.getDatabase("comics");
       val collection = database.getCollection("auctions");
-      val comic = jsonOf[Comic].decode(request, strict = true).run.run
-      if (comic.isRight) {
-        val c = comic | Comic("none", "none", "none")
+      request.decode[Comic]{ c =>
         val comicBson = Document(
           "author" -> c.author,
           "superhero" -> c.superhero,
@@ -60,34 +88,19 @@ object Server {
         val o = collection.insertOne(comicBson)
         val r = Await.result(o.toFuture(), Duration(10, TimeUnit.SECONDS))
         val notificationsColl = database.getCollection("notifications");
-
-        val query =or(
-          or(
-            equal("author", c.author),
-            equal("date", c.date),
-            equal("superhero", c.superhero)
-          ),
-          Document("author" -> None,
-            "date" -> None,
-            "superhero"-> None
-          ))
         val watchers = c.getWatchers(database)
         val notifications = watchers.map(e => Document("email"-> e, "comic" -> comicBson))
         val o2 = notificationsColl.insertMany(notifications)
         val r2 = Await.result(o2.toFuture(), Duration(10, TimeUnit.SECONDS))
         val count = notificationsColl.count()
         Ok(s"OK, added the comic")
-      } else {
-        BadRequest()
       }
 
     case request @ POST -> Root / "subscribe" =>
       val mongoClient = MongoClient()
       val database = mongoClient.getDatabase("comics");
       val collection = database.getCollection("subscriptions");
-      val subscription = jsonOf[Subscription].decode(request, strict = true).run.run
-      if (subscription.isRight) {
-        val s = subscription | Subscription("invalid", None, None, None)
+      request.decode[Subscription]{ s =>
         val subscriptionBson = Document(
           "email" -> s.email,
           "author" -> s.author,
@@ -98,22 +111,16 @@ object Server {
         val r = Await.result(o.toFuture(), Duration(10, TimeUnit.SECONDS))
 
         Ok(s"Subscription successful")
-      } else {
-        BadRequest()
       }
 
     case request @ POST -> Root / "notifications" =>
       val mongoClient: MongoClient = MongoClient()
       val database: MongoDatabase = mongoClient.getDatabase("comics");
       val coll: MongoCollection[Document] = database.getCollection("notifications");
-      val subscriber = jsonOf[Subscriber].decode(request, strict = true).run.run
-      if (subscriber.isRight) {
-        val s = subscriber | Subscriber("invalid")
+      request.decode[Subscriber]{ s =>
         val o = coll.find(equal("email", s.email))
         val r = Await.result(o.toFuture(), Duration(10, TimeUnit.SECONDS))
         Ok(Document( "comics" -> r).toString)
-      } else {
-        BadRequest()
       }
   }
 
