@@ -3,8 +3,10 @@
 
 
 
+
 CLOSED: [2016-05-29 Sun 11:24]
-* TODO add exception handling for db (try catch {case e: Exceptionnn => ... })
+* TODO finish moving db call to separate functions
+* TODO add exception handling for d (try catch {case e: Exceptionnn => ... })
 * TODO clean up json in notifications response
 * TODO add remove-comic endpoint 
 * TODO add comic titles

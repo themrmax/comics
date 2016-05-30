@@ -47,8 +47,6 @@ final case class Comic(
 object Comic {
   implicit val comicEntityDecoder: EntityDecoder[Comic] =
     jsonOf[Comic]
-  implicit val comicEntityEncoder: EntityEncoder[Comic] =
-    jsonEncoderOf[Comic]
 }
 
 case class Subscription(
