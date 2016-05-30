@@ -19,6 +19,12 @@ final case class Comic(
   superhero: String,
   date: String) {
 
+  val bson = Document(
+    "author" -> author,
+    "superhero" -> superhero,
+    "date" -> date
+  )
+
   def getWatchers (db: MongoDatabase): Seq[BsonValue] = {
     val subscriptionsColl = db.getCollection("subscriptions")
     val query =
@@ -78,16 +84,11 @@ object Server {
       val database = mongoClient.getDatabase("comics");
       val collection = database.getCollection("auctions");
       request.decode[Comic]{ c =>
-        val comicBson = Document(
-          "author" -> c.author,
-          "superhero" -> c.superhero,
-          "date" -> c.date
-        )
-        val o = collection.insertOne(comicBson)
+        val o = collection.insertOne(c.bson)
         val r = Await.result(o.toFuture(), Duration(10, TimeUnit.SECONDS))
         val notificationsColl = database.getCollection("notifications");
         val watchers = c.getWatchers(database)
-        val notifications = watchers.map(e => Document("email"-> e, "comic" -> comicBson))
+        val notifications = watchers.map(e => Document("email"-> e, "comic" -> c.bson))
         val o2 = notificationsColl.insertMany(notifications)
         val r2 = Await.result(o2.toFuture(), Duration(10, TimeUnit.SECONDS))
         val count = notificationsColl.count()
