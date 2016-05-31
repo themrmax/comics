@@ -1,11 +1,29 @@
 import org.scalatest._
+import org.scalatest.BeforeAndAfter
 import org.http4s._, org.http4s.dsl._
 import org.http4s.circe._
 import Server._
 import io.circe.Json
 import org.mongodb.scala._
 
-class ServerSpec extends FlatSpec with Matchers {
+class ServerSpec extends FlatSpec with Matchers with BeforeAndAfter {
+
+  val db = MongoClient().getDatabase("comics-test"); //should be comics-test
+
+  before {
+  }
+
+  after {
+    List("comics","subscriptions","notifications").map(db.getCollection(_).drop().toFuture())
+  }
+
+  "A comic" should "get some watchers" in {
+    val subscription = Subscription(email="comicfan69@rocketmail.com", author=Some("steve"))
+    val r = subscription.save(db)
+    val comic = Comic("steve","hatman","1985")
+    val w = comic.getWatchers(db)
+    w.length should not equal 0
+  }
 
   "The default route" should " return OK" in {
     val request = Request(method = GET, uri = uri("/"))
@@ -40,10 +58,4 @@ class ServerSpec extends FlatSpec with Matchers {
     val u = println(resp)
   }
 
-  "A comic" should "get some watchers" in {
-    val db = MongoClient().getDatabase("comics");
-    val comic = Comic("steve","hatman","1985")
-    val w = comic.getWatchers(db)
-    w.length should not equal 0
-  }
 }
