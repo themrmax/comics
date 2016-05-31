@@ -24,42 +24,44 @@ final case class Comic(
     "date" -> date
   )
 
-  def save(db: MongoDatabase): Unit = {
-    val collection = db.getCollection("comics");
-    val o = collection.insertOne(bson)
-    val r = Await.result(o.toFuture(), Duration(10, TimeUnit.SECONDS))
-    return
+  def save(db: MongoDatabase): Either[Exception, Unit] = {
+    try {
+      val collection = db.getCollection("comics");
+      val o = collection.insertOne(bson)
+      val r = Await.result(o.toFuture(), Duration(10, TimeUnit.SECONDS))
+      return Right()
+    }
+    catch {case e: Exception =>
+      return Left(e)}
   }
 
   def getWatchers (db: MongoDatabase): Seq[BsonValue] = {
     val subscriptionsColl = db.getCollection("subscriptions")
-    val query =
+    val query =or(
       or(
         equal("author", author),
         equal("date", date),
         equal("superhero", superhero)
-      )
-
-    // val query =or(
-    //   or(
-    //     equal("author", c.author),
-    //     equal("date", c.date),
-    //     equal("superhero", c.superhero)
-    //   ),
-    //   Document("author" -> None,
-    //     "date" -> None,
-    //     "superhero"-> None
-    //   ))
+      ),
+      Document("author" -> None,
+        "date" -> None,
+        "superhero"-> None
+      ))
     val r2 = subscriptionsColl.find(query).projection(include("email")).results()
     val subscribersToNotify = r2.map(res => res.get("email").get).distinct
     return subscribersToNotify
   }
-  def notifyWatchers (db: MongoDatabase) = {
-    val notificationsColl = db.getCollection("notifications");
-    val watchers = getWatchers(db)
-    val notifications = watchers.map(e => Document("email"-> e, "comic" -> bson))
-    val o2 = notificationsColl.insertMany(notifications)
-    val r2 = Await.result(o2.toFuture(), Duration(10, TimeUnit.SECONDS))
+  def notifyWatchers (db: MongoDatabase): Either[Exception, Unit] = {
+    try {
+      val notificationsColl = db.getCollection("notifications");
+      val watchers = getWatchers(db)
+      val notifications = watchers.map(e => Document("email"-> e, "comic" -> bson))
+      val o2 = notificationsColl.insertMany(notifications)
+      val r2 = Await.result(o2.toFuture(), Duration(10, TimeUnit.SECONDS))
+      return Right()
+    }
+    catch {case e: Exception =>
+      return Left(e)}
   }
 }
 
@@ -74,17 +76,21 @@ case class Subscription(
   superhero: Option[String]=None,
   date: Option[String]=None)
 {
-  def save (db: MongoDatabase): Unit = {
-    val subscriptionBson = Document(
-      "email" -> email,
-      "author" -> author,
-      "superhero" -> superhero,
-      "date" -> date
-    )
-    val coll = db.getCollection("subscriptions");
-    val o = coll.insertOne(subscriptionBson)
-    val r = Await.result(o.toFuture(), Duration(10, TimeUnit.SECONDS))
-    return
+  def save (db: MongoDatabase): Either[Exception, Unit]= {
+    try{
+      val subscriptionBson = Document(
+        "email" -> email,
+        "author" -> author,
+        "superhero" -> superhero,
+        "date" -> date
+      )
+      val coll = db.getCollection("subscriptions");
+      val o = coll.insertOne(subscriptionBson)
+      val r = Await.result(o.toFuture(), Duration(10, TimeUnit.SECONDS))
+      return Right()
+    }
+    catch {case e: Exception =>
+      return Left(e)}
   }
 }
 
@@ -96,11 +102,15 @@ object Subscription {
 case class Subscriber(
   email: String)
 {
-  def getNotifications(db: MongoDatabase): Seq[Document] = {
-    val coll = db.getCollection("notifications");
-    val o = coll.find(equal("email", email)).projection(excludeId())
-    val r = Await.result(o.toFuture(), Duration(10, TimeUnit.SECONDS))
-    return r
+  def getNotifications(db: MongoDatabase): Either[Exception, Seq[Document]] = {
+    try {
+      val coll = db.getCollection("notifications");
+      val o = coll.find(equal("email", email)).projection(excludeId())
+      val r = Await.result(o.toFuture(), Duration(10, TimeUnit.SECONDS))
+      return Right(r)
+    }
+    catch {case e: Exception =>
+      return Left(e)}
   }
 
 }
@@ -111,8 +121,7 @@ object Subscriber {
 }
 
 object Server {
-  val mongoClient = MongoClient()
-  val db = mongoClient.getDatabase("comics");
+  val db = MongoClient().getDatabase("comics");
   def service = HttpService {
     case GET -> Root =>
       Ok(s"Yup")
@@ -121,20 +130,34 @@ object Server {
       request.decode[Comic]{ c =>
         val r = c.save(db)
         val r2 = c.notifyWatchers(db)
-        Ok(s"OK, added the comic")
+        if (r.isRight & r2.isRight){
+          Ok(s"OK, added the comic")
+        }
+        else{
+          ServiceUnavailable()
+        }
       }
 
     case request @ POST -> Root / "subscribe" =>
       request.decode[Subscription]{ s =>
-        s.save(db)
-
-        Ok(s"Subscription successful")
+        val r = s.save(db)
+        if (r.isRight){
+          Ok(s"Subscription successful")
+        }
+        else{
+          ServiceUnavailable()
+        }
       }
 
     case request @ POST -> Root / "notifications" =>
       request.decode[Subscriber]{ s =>
         val r = s.getNotifications(db)
-        Ok(Document( "comics" -> r).toJson)
+        if (r.isRight){
+          Ok(Document( "comics" -> r.right.get).toJson)
+        }
+        else{
+          ServiceUnavailable()
+        }
       }
   }
 
