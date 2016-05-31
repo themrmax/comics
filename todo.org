@@ -7,7 +7,8 @@
 CLOSED: [2016-05-29 Sun 11:24]
 * TODO finish moving db call to separate functions
 * TODO add exception handling for d (try catch {case e: Exceptionnn => ... })
-* TODO clean up json in notifications response
+* DONE clean up json in notifications response
+CLOSED: [2016-05-31 Tue 13:38]
 * TODO add remove-comic endpoint 
 * TODO add comic titles
 * TODO make integration tests use a test-db and cleanup after each test

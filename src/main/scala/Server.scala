@@ -9,9 +9,9 @@ import scala.concurrent.duration.Duration
 import org.mongodb.scala.model.Filters._
 import org.mongodb.scala.model.Projections._
 import org.mongodb.scala.bson.BsonValue
+import org.mongodb.scala.bson.BsonArray
 import Helpers._
 import scala.concurrent._
-import ExecutionContext.Implicits.global
 
 
 final case class Comic(
@@ -117,9 +117,9 @@ object Server {
       val database: MongoDatabase = mongoClient.getDatabase("comics");
       val coll: MongoCollection[Document] = database.getCollection("notifications");
       request.decode[Subscriber]{ s =>
-        val o = coll.find(equal("email", s.email))
+        val o = coll.find(equal("email", s.email)).projection(excludeId())
         val r = Await.result(o.toFuture(), Duration(10, TimeUnit.SECONDS))
-        Ok(Document( "comics" -> r).toString)
+        Ok(Document( "comics" -> r).toJson)
       }
   }
 

@@ -4,7 +4,6 @@ import org.http4s.circe._
 import Server._
 import io.circe.Json
 import org.mongodb.scala._
-import Helpers._
 
 class ServerSpec extends FlatSpec with Matchers {
 
@@ -38,7 +37,9 @@ class ServerSpec extends FlatSpec with Matchers {
   it should "return some notifications" in {
     val request = Request(method = POST, uri = uri("/notifications")).withBody(Json.obj("email" -> Json.fromString("comicfan69@rocketmail.com"))).run
     val resp = service(request).run.as[String].run
+    val u = println(resp)
   }
+
   "A comic" should "get some watchers" in {
     val db = MongoClient().getDatabase("comics");
     val comic = Comic("steve","hatman","1985")
