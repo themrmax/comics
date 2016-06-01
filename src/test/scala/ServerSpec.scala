@@ -5,6 +5,8 @@ import org.http4s.circe._
 import Server._
 import io.circe.Json
 import org.mongodb.scala._
+import Helpers._
+import ComicClasses._
 
 class ServerSpec extends FlatSpec with Matchers with BeforeAndAfter {
 
@@ -29,7 +31,36 @@ class ServerSpec extends FlatSpec with Matchers with BeforeAndAfter {
     val r = comic.save(db)
     r.isRight should be
   }
+  it should "delete" in {
+    val comic = Comic("steve","tigerdog","1985")
+    val r = comic.save(db)
+    val r2 = comic.delete(db)
+    val o = db.getCollection("comics").find(comic.bson)
+    val r3 = o.results()
+    r3.length shouldEqual 0
+  }
 
+  "A subscriber" should "get some notifications" in {
+    val subscription = Subscription("m@n.com", None, None, None)
+    val r1 = subscription.save(db)
+    val comic = Comic("jak","bratman","1985")
+    val r2 = comic.save(db)
+    val subscriber = ComicClasses.Subscriber("m@n.com")
+    val n = subscriber.getNotifications(db)
+    println(n)
+    n.right.get.length should not equal 0
+  }
+
+  it should "purge the notifications after they're receieved" in {
+    val subscription = Subscription(email="comicfan69@rocketmail.com", author=Some("steve"))
+    subscription.save(db)
+    val comic = Comic("steve","hatman","1985")
+    comic.save(db)
+    val subscriber = Subscriber(email="comicfan69@rocketmail.com")
+    val n = subscriber.getNotifications(db)
+    val n2 = subscriber.getNotifications(db)
+    n2.right.get.length shouldEqual 0
+  }
   "The default route" should " return OK" in {
     val request = Request(method = GET, uri = uri("/"))
     service(request).run.status.code shouldEqual 200
