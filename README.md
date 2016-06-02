@@ -1,5 +1,5 @@
 # Comic book auction notification app
-This is the backend REST API to an app for an ongoing comic book auction. It uses `http4s` for the webserver, and MongoDB for the database.
+This is the backend REST API to an app for notifying subscribers about items added or removed from a comic book auction. It uses `http4s` for the webserver, and MongoDB for the database.
 
 
 ## Installation
@@ -7,7 +7,7 @@ This is the backend REST API to an app for an ongoing comic book auction. It use
 You need to have mongodb running somewhere for the app and tests to run; the default is `localhost:27017`, or you can set the url in the value `mongoUrl` in `Server.scala`. Then just run `sbt run` to install the dependencies.
 
 ## Running and testing
-Run the app with `sbt run`, run the unit tests with `sbt test`.
+Run the app with `sbt run`, run the tests with `sbt test`.
 
 ## API Usage
 The server runs on port 8080 and has the following endpoints:
