@@ -7,10 +7,11 @@ import io.circe.Json
 import org.mongodb.scala._
 import Helpers._
 import ComicClasses._
+import ComicClasses.Subscription
 
 class ServerSpec extends FlatSpec with Matchers with BeforeAndAfter {
 
-  val db = MongoClient().getDatabase("comics-test"); //should be comics-test
+  val db = MongoClient().getDatabase("comics-test"); 
 
   before {
   }
@@ -41,13 +42,12 @@ class ServerSpec extends FlatSpec with Matchers with BeforeAndAfter {
   }
 
   "A subscriber" should "get some notifications" in {
-    val subscription = Subscription("m@n.com", None, None, None)
+    val subscription = Subscription("m@n.com", Some("jak"), None, None)
     val r1 = subscription.save(db)
-    val comic = Comic("jak","bratman","1985")
-    val r2 = comic.save(db)
+    val c = Comic("jak","bratman","1985")
+    val r2 = c.notifyWatchers(db, message="New comic up for auction...")
     val subscriber = ComicClasses.Subscriber("m@n.com")
     val n = subscriber.getNotifications(db)
-    println(n)
     n.right.get.length should not equal 0
   }
 

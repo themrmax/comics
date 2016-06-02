@@ -17,7 +17,7 @@ object Server {
         val r = c.save(db)
         val r2 = c.notifyWatchers(db, message="New comic up for auction...")
         if (r.isRight & r2.isRight){
-          Ok(s"OK, added the comic")
+          Ok(s"OK, added the comic\n")
         }
         else{
           ServiceUnavailable()
@@ -29,7 +29,7 @@ object Server {
         val r2 = c.notifyWatchers(db, message="This comic is sold!")
         val r = c.delete(db)
         if (r.isRight & r2.isRight){
-          Ok(s"OK, deleted the comic")
+          Ok(s"OK, deleted the comic\n")
         }
         else{
           ServiceUnavailable()
@@ -38,9 +38,10 @@ object Server {
 
     case request @ POST -> Root / "subscribe" =>
       request.decode[Subscription]{ s =>
+        println(s)
         val r = s.save(db)
         if (r.isRight){
-          Ok(s"Subscription successful")
+          Ok(s"Subscription successful\n")
         }
         else{
           ServiceUnavailable()
@@ -51,7 +52,7 @@ object Server {
       request.decode[Subscriber]{ s =>
         val r = s.getNotifications(db)
         if (r.isRight){
-          Ok(Document( "comics" -> r.right.get).toJson)
+          Ok(Document( "comics" -> r.right.get).toJson + "\n")
         }
         else{
           ServiceUnavailable()
